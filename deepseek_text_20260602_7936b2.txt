@@ -1,0 +1,11 @@
+oil_bot/
+├── bot.py                 # Главный файл бота
+├── config.py              # Конфигурация и токены
+├── database.py            # Работа с базой данных (SQLite)
+├── keyboards.py           # Клавиатуры (кнопки)
+├── states.py              # Состояния для машины состояний
+├── requirements.txt       # Зависимости
+├── Procfile              # Для Render
+├── Dockerfile            # Для Render
+├── .gitignore
+└── README.md
