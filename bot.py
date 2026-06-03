@@ -8,11 +8,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Токен бота
+# Токен бота - ИСПРАВЛЕНО НА Bell_Oilik_Bot
 BOT_TOKEN = os.getenv('Bell_Oilik_Bot')
 
 if not BOT_TOKEN:
-    logger.error("❌ ОШИБКА: BOT_TOKEN не найден в переменных окружения!")
+    logger.error("❌ ОШИБКА: Bell_Oilik_Bot не найден в переменных окружения!")
+    logger.info("💡 Добавьте переменную Bell_Oilik_Bot на Render в разделе Environment Variables")
     exit(1)
 
 logger.info(f"✅ Бот запускается с токеном: {BOT_TOKEN[:10]}...")
