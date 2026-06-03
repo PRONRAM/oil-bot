@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Токен бота
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv('Bell_Oilik_Bot')
 
 if not BOT_TOKEN:
     logger.error("❌ ОШИБКА: BOT_TOKEN не найден в переменных окружения!")
