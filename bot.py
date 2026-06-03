@@ -703,7 +703,7 @@ def finish_oil_test(chat_id):
     
     if score >= 80:
         result = "🎉
-        def finish_oil_test(chat_id):
+def finish_oil_test(chat_id):
     """Завершение теста по маслам"""
     data = user_test_answers.get(chat_id)
     if not data:
