@@ -22,6 +22,7 @@ last_update_id = 0
 # Хранилище для данных пользователей
 user_data = {}
 user_test_answers = {}
+client_index = {}
 
 # ============= КОНТЕНТ ДЛЯ ВЕТКИ 1 (О КОМПАНИИ) =============
 
@@ -315,9 +316,7 @@ ENERGY_TIPS = {
 2. Сделай 2 глубоких вдоха
 3. Мысленно скажи: «Этот клиент — первый и новый»
 4. Открой глаза
-5. Уголки губ вверх — улыбка снижает стресс
-
-⏱️ 30 секунд | ⚓ Якорь спокойствия | 🎯 Ритуал | ◀️ В меню адаптации""",
+5. Уголки губ вверх — улыбка снижает стресс""",
 
     "anchor": """⚓ <b>Якорь спокойствия</b>
 
@@ -326,9 +325,7 @@ ENERGY_TIPS = {
 В момент стресса коснись этого предмета и скажи про себя:
 «Стоп. Я здесь, я справлюсь. Это просто работа».
 
-Через 2 недели якорь начнёт срабатывать автоматически!
-
-⏱️ 30 секунд | ⚓ Якорь спокойствия | 🎯 Ритуал | ◀️ В меню адаптации""",
+Через 2 недели якорь начнёт срабатывать автоматически!""",
 
     "ritual": """🎯 <b>Ритуал после смены</b>
 
@@ -336,9 +333,7 @@ ENERGY_TIPS = {
 
 Физическое действие = сигнал мозгу: «Рабочий режим выключен. Я дома».
 
-Без ритуала ты ментально остаёшься на смене до утра.
-
-⏱️ 30 секунд | ⚓ Якорь спокойствия | 🎯 Ритуал | ◀️ В меню адаптации"""
+Без ритуала ты ментально остаёшься на смене до утра."""
 }
 
 # Тест на адаптацию (10 вопросов)
@@ -394,34 +389,7 @@ ADAPTATION_TEST = [
      "explanation": "Это главный вопрос. Маленькое «для себя» каждый день — необходимость!"}
 ]
 
-# ============= ВЕТКА 3 (МАСЛА) - УПРОЩЕННАЯ ВЕРСИЯ =============
-
-OIL_MENU = """
-📚 <b>Обучение маслам</b>
-
-Добро пожаловать в учебный центр!
-
-🎓 <b>Программа обучения:</b>
-• Вязкость и сезонность
-• API, ACEA, допуски
-• Типы масел
-• Частые ошибки
-• Специализированные масла
-
-<b>Доступные команды:</b>
-📖 Материалы для изучения
-📊 Мой прогресс
-📝 Пройти тест (8 вопросов)
-🏠 В главное меню
-"""
-
-# Учебные материалы
-OIL_CARDS = {
-    "1_1": "📖 <b>Что такое вязкость?</b>\n\nВязкость — главное свойство масла. Это способность оставаться текучим на морозе и создавать прочную плёнку в жару. Без правильной вязкости двигатель изнашивается за тысячи километров.",
-    "1_2": "📖 <b>Маркировка 0W-20, 5W-30, 5W-40</b>\n\nЧисло перед W — пусковая вязкость. Чем оно меньше, тем легче запуск зимой.\nЧисло после W — рабочая вязкость при 100°C. Отвечает за защиту в жару.",
-    "1_3": "📖 <b>Что означает W?</b>\n\nW — Winter (зима). Буква появилась в 1952 году. Всесезонные масла содержат W, летние — нет."
-}
-
+# Вопросы по маслам
 OIL_QUESTIONS = [
     {"q": "Что такое вязкость моторного масла?", 
      "options": ["Цвет и запах", "Скорость сгорания", "Текучесть при разных температурах"],
@@ -463,6 +431,35 @@ OIL_QUESTIONS = [
      "correct": 3,
      "explanation": "Синтетика имеет лучшую текучесть и защиту для современных моторов."}
 ]
+
+# Учебные материалы
+OIL_MATERIALS = """
+📖 <b>Учебные материалы по маслам</b>
+
+<b>1. Вязкость</b>
+Вязкость — способность масла оставаться текучим на морозе и создавать плёнку в жару.
+
+<b>2. Маркировка</b>
+• 0W-20, 5W-30, 5W-40 — всесезонные
+• Число перед W — пусковая вязкость (чем меньше, тем легче запуск зимой)
+• Число после W — рабочая вязкость при 100°C
+
+<b>3. API классификация</b>
+• API S — для бензиновых двигателей
+• API C — для дизельных двигателей
+
+<b>4. Типы масел</b>
+• Минеральное — дешёвое, быстро стареет
+• Полусинтетика — для бюджетных моторов
+• Синтетика — лучшая защита для современных двигателей
+
+<b>5. Главные ошибки</b>
+• Подбор только по вязкости, игнорируя допуск
+• Смешивание разных масел
+• Использование просроченного масла
+
+<i>Чтобы проверить знания, нажмите «📝 Пройти тест»</i>
+"""
 
 # ============= ФУНКЦИИ ОТПРАВКИ =============
 
@@ -561,11 +558,9 @@ def handle_energy(chat_id):
     buttons = ["⏱️ 30 секунд между клиентами", "⚓ Якорь спокойствия", "🎯 Ритуал после смены", "◀️ В меню адаптации"]
     send_keyboard(chat_id, ENERGY_MENU, buttons)
 
-client_index = {}
-
 def handle_client_type(chat_id, client_type):
     """Обработка типа клиента"""
-    if client_type not in client_index:
+    if chat_id not in client_index:
         client_index[chat_id] = 0
     
     types = ["ham", "victim", "manipulator"]
@@ -577,6 +572,11 @@ def handle_client_type(chat_id, client_type):
     
     buttons = ["🤬 Хам", "😢 Жертва", "🎭 Манипулятор", "🔄 Ещё тип клиента", "◀️ В меню адаптации"]
     send_keyboard(chat_id, CLIENT_TYPES[current], buttons)
+
+def handle_energy_tip(chat_id, tip_type):
+    """Показ совета по энергии"""
+    buttons = ["⏱️ 30 секунд между клиентами", "⚓ Якорь спокойствия", "🎯 Ритуал после смены", "◀️ В меню адаптации"]
+    send_keyboard(chat_id, ENERGY_TIPS[tip_type], buttons)
 
 # Тест на адаптацию
 def start_adaptation_test(chat_id):
@@ -611,15 +611,12 @@ def process_test_answer(chat_id, answer):
     q_num = data["current"]
     question = ADAPTATION_TEST[q_num]
     
-    # Сохраняем ответ
     data["answers"].append(answer)
     if answer in question["dangerous"]:
         data["dangerous_count"] += 1
     
-    # Показываем пояснение
     send_message(chat_id, f"📝 <i>{question['explanation']}</i>")
     
-    # Переходим к следующему вопросу
     data["current"] += 1
     send_test_question(chat_id)
 
@@ -679,11 +676,242 @@ def process_oil_answer(chat_id, answer_text):
     questions = data["questions"]
     q = questions[q_num]
     
-    # Извлекаем номер ответа из текста
     try:
         answer_num = int(answer_text[0])
     except:
         answer_num = 1
     
     if answer_num == q["correct"]:
-        data["correct
+        data["correct"] += 1
+        send_message(chat_id, f"✅ <b>Правильно!</b>\n\n<i>{q['explanation']}</i>")
+    else:
+        correct_answer = q["options"][q["correct"] - 1]
+        send_message(chat_id, f"❌ <b>Неправильно!</b>\n\nПравильный ответ: {correct_answer}\n\n<i>{q['explanation']}</i>")
+    
+    data["current"] += 1
+    send_oil_question(chat_id)
+
+def finish_oil_test(chat_id):
+    """Завершение теста по маслам"""
+    data = user_test_answers.get(chat_id)
+    if not data:
+        return
+    
+    correct = data["correct"]
+    total = len(data["questions"])
+    score = int(correct / total * 100)
+    
+    if score >= 80:
+        result = "🎉
+        def finish_oil_test(chat_id):
+    """Завершение теста по маслам"""
+    data = user_test_answers.get(chat_id)
+    if not data:
+        return
+    
+    correct = data["correct"]
+    total = len(data["questions"])
+    score = int(correct / total * 100)
+    
+    if score >= 80:
+        result = "🎉 <b>Отлично!</b> Вы хорошо знаете материалы по маслам!"
+    elif score >= 60:
+        result = "📚 <b>Неплохо!</b> Но стоит повторить материалы."
+    else:
+        result = "📖 <b>Стоит поучиться!</b> Рекомендуем изучить учебные материалы и пройти тест снова."
+    
+    buttons = ["📖 Учебные материалы", "📝 Пройти тест (8 вопросов)", "🏠 В главное меню", "◀️ В меню обучения"]
+    
+    send_keyboard(chat_id, 
+        f"✅ <b>Тест пройден!</b>\n\n"
+        f"Правильных ответов: {correct} из {total}\n"
+        f"Результат: {score}%\n\n"
+        f"{result}", 
+        buttons)
+    
+    del user_test_answers[chat_id]
+
+def show_oil_materials(chat_id):
+    """Показать учебные материалы"""
+    buttons = ["📝 Пройти тест (8 вопросов)", "◀️ В меню обучения", "🏠 В главное меню"]
+    send_keyboard(chat_id, OIL_MATERIALS, buttons)
+
+def show_progress(chat_id):
+    """Показать прогресс (простая версия)"""
+    text = """
+📊 <b>Ваш прогресс в обучении</b>
+
+📚 <b>Учебные материалы:</b>
+• Вязкость и сезонность — ✅
+• API, ACEA, допуски — ✅
+• Типы масел — ✅
+
+📝 <b>Тесты:</b>
+• Базовый тест (8 вопросов) — доступен
+
+🎯 <b>Следующие шаги:</b>
+Пройдите тест, чтобы проверить знания!
+
+<i>В будущих версиях появится полный 3-месячный курс с ежедневными материалами.</i>
+"""
+    buttons = ["📖 Учебные материалы", "📝 Пройти тест (8 вопросов)", "◀️ В меню обучения"]
+    send_keyboard(chat_id, text, buttons)
+
+# ============= ОСНОВНОЙ ЦИКЛ ОБРАБОТКИ СООБЩЕНИЙ =============
+
+def process_message(message):
+    """Обработка входящих сообщений"""
+    try:
+        chat_id = message['chat']['id']
+        text = message.get('text', '')
+        
+        logger.info(f"📨 Получено сообщение от {chat_id}: {text[:50]}")
+        
+        # Проверяем, находится ли пользователь в тесте
+        if chat_id in user_test_answers:
+            # Если это команда прерывания
+            if text == "🚫 Прервать тест":
+                del user_test_answers[chat_id]
+                buttons = ["🏠 В главное меню", "💪 Личность и адаптация", "📚 Обучение маслам"]
+                keyboard = {"keyboard": [[{"text": b}] for b in buttons], "resize_keyboard": True}
+                send_message(chat_id, "Тест прерван. Возвращаемся в главное меню.", keyboard)
+                return
+            
+            # Проверяем, какой тест активен
+            data = user_test_answers[chat_id]
+            if "questions" in data:  # Это тест по маслам
+                process_oil_answer(chat_id, text)
+            else:  # Это тест на адаптацию
+                process_test_answer(chat_id, text)
+            return
+        
+        # Обработка обычных команд
+        if text == '/start':
+            handle_start(chat_id)
+        
+        # Ветка 1 - О компании
+        elif text == '🏢 О компании':
+            handle_company(chat_id)
+        elif text == '📜 История компании':
+            send_keyboard(chat_id, COMPANY_HISTORY, ["◀️ В меню компании", "🏠 В главное меню"])
+        elif text == '⭐ Миссия и ценности':
+            send_keyboard(chat_id, MISSION, ["◀️ В меню компании", "🏠 В главное меню"])
+        elif text == '📋 Наши стандарты работы':
+            send_keyboard(chat_id, STANDARDS, ["◀️ В меню компании", "🏠 В главное меню"])
+        elif text == '📞 Структура и контакты':
+            send_keyboard(chat_id, CONTACTS, ["◀️ В меню компании", "🏠 В главное меню"])
+        elif text == '◀️ В меню компании':
+            handle_company(chat_id)
+        
+        # Ветка 2 - Адаптация
+        elif text == '💪 Личность и адаптация':
+            handle_adaptation(chat_id)
+        elif text == '🔥 Профессиональное выгорание':
+            handle_burnout(chat_id)
+        elif text == '❓ Что делать?':
+            send_keyboard(chat_id, BURNOUT_TIPS, ["❓ Что делать?", "😫 А если уже всё бесит?", "◀️ В меню адаптации"])
+        elif text == '😫 А если уже всё бесит?':
+            send_keyboard(chat_id, BURNOUT_ANGRY, ["❓ Что делать?", "😫 А если уже всё бесит?", "◀️ В меню адаптации"])
+        elif text == '👥 Я и коллектив сейчас':
+            handle_team(chat_id)
+        elif text == '⚠️ Что делать с токсичным коллегой?':
+            send_keyboard(chat_id, TOXIC_ADVICE, ["⚠️ Что делать с токсичным коллегой?", "📈 Как повысить авторитет?", "◀️ В меню адаптации"])
+        elif text == '📈 Как повысить авторитет?':
+            send_keyboard(chat_id, AUTHORITY_ADVICE, ["⚠️ Что делать с токсичным коллегой?", "📈 Как повысить авторитет?", "◀️ В меню адаптации"])
+        elif text == '😤 Сложные клиенты':
+            handle_difficult_clients(chat_id)
+        elif text == '🤬 Хам':
+            handle_client_type(chat_id, "ham")
+        elif text == '😢 Жертва':
+            handle_client_type(chat_id, "victim")
+        elif text == '🎭 Манипулятор':
+            handle_client_type(chat_id, "manipulator")
+        elif text == '🔄 Ещё тип клиента':
+            handle_client_type(chat_id, "next")
+        elif text == '📈 Моя личность + карьера':
+            handle_career(chat_id)
+        elif text == '✅ Чек-лист роста':
+            send_keyboard(chat_id, CHECKLIST, ["✅ Чек-лист роста", "💪 Как прокачать уверенность?", "◀️ В меню адаптации"])
+        elif text == '💪 Как прокачать уверенность?':
+            send_keyboard(chat_id, CONFIDENCE, ["✅ Чек-лист роста", "💪 Как прокачать уверенность?", "◀️ В меню адаптации"])
+        elif text == '⚡ Энергия смены':
+            handle_energy(chat_id)
+        elif text == '⏱️ 30 секунд между клиентами':
+            handle_energy_tip(chat_id, "30sec")
+        elif text == '⚓ Якорь спокойствия':
+            handle_energy_tip(chat_id, "anchor")
+        elif text == '🎯 Ритуал после смены':
+            handle_energy_tip(chat_id, "ritual")
+        elif text == '📊 Тест на адаптацию':
+            start_adaptation_test(chat_id)
+        elif text == '◀️ В меню адаптации':
+            handle_adaptation(chat_id)
+        
+        # Ветка 3 - Обучение маслам
+        elif text == '📚 Обучение маслам':
+            handle_oil(chat_id)
+        elif text == '📖 Учебные материалы':
+            show_oil_materials(chat_id)
+        elif text == '📊 Мой прогресс':
+            show_progress(chat_id)
+        elif text == '📝 Пройти тест (8 вопросов)':
+            start_oil_test(chat_id)
+        elif text == '◀️ В меню обучения':
+            handle_oil(chat_id)
+        
+        # Возврат в главное меню
+        elif text == '🏠 В главное меню':
+            handle_start(chat_id)
+        
+        # Неизвестная команда
+        else:
+            keyboard = {
+                "keyboard": [
+                    [{"text": "🏢 О компании"}],
+                    [{"text": "💪 Личность и адаптация"}],
+                    [{"text": "📚 Обучение маслам"}]
+                ],
+                "resize_keyboard": True
+            }
+            send_message(chat_id, "🤔 Пожалуйста, используйте кнопки меню для навигации.", keyboard)
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки сообщения: {e}")
+
+def main():
+    """Главный цикл бота"""
+    global last_update_id
+    
+    logger.info("🚀 Бот запущен и начал прослушивание сообщений...")
+    
+    while True:
+        try:
+            url = f"{BASE_URL}/getUpdates"
+            params = {
+                "offset": last_update_id + 1,
+                "timeout": 30
+            }
+            
+            response = requests.get(url, params=params, timeout=35)
+            data = response.json()
+            
+            if data.get('ok'):
+                updates = data.get('result', [])
+                for update in updates:
+                    last_update_id = update['update_id']
+                    if 'message' in update:
+                        process_message(update['message'])
+            else:
+                logger.error(f"❌ Ошибка API: {data}")
+                
+        except requests.exceptions.Timeout:
+            logger.warning("⚠️ Таймаут, продолжаем...")
+        except Exception as e:
+            logger.error(f"❌ Критическая ошибка: {e}")
+            time.sleep(5)
+
+if __name__ == '__main__':
+    logger.info("=" * 50)
+    logger.info("🤖 ЗАПУСК БОТА")
+    logger.info("=" * 50)
+    main()
