@@ -1,151 +1,167 @@
-import logging
 import os
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+import requests
+import json
+import time
+import logging
 
-# Токен из переменных окружения
+# Настройка логов
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Токен бота
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 if not BOT_TOKEN:
-    print("ОШИБКА: BOT_TOKEN не найден в переменных окружения!")
+    logger.error("❌ ОШИБКА: BOT_TOKEN не найден в переменных окружения!")
     exit(1)
 
-# Настройка бота
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
-logging.basicConfig(level=logging.INFO)
+logger.info(f"✅ Бот запускается с токеном: {BOT_TOKEN[:10]}...")
 
-# Клавиатуры
-def main_menu():
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    buttons = [
-        KeyboardButton('🏢 О компании'),
-        KeyboardButton('💪 Личность и адаптация'),
-        KeyboardButton('📚 Обучение маслам')
-    ]
-    keyboard.add(*buttons)
-    return keyboard
+BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+last_update_id = 0
 
-def company_menu():
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    buttons = [
-        KeyboardButton('📜 История компании'),
-        KeyboardButton('⭐ Миссия и ценности'),
-        KeyboardButton('📋 Наши стандарты работы'),
-        KeyboardButton('📞 Контакты'),
-        KeyboardButton('🏠 Главное меню')
-    ]
-    keyboard.add(*buttons)
-    return keyboard
+def send_message(chat_id, text):
+    """Отправка сообщения"""
+    url = f"{BASE_URL}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML"
+    }
+    try:
+        response = requests.post(url, json=data, timeout=10)
+        if response.status_code == 200:
+            logger.info(f"✅ Сообщение отправлено в чат {chat_id}")
+        else:
+            logger.error(f"❌ Ошибка отправки: {response.status_code}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка: {e}")
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    await message.answer(
-        f"👋 Привет, {message.from_user.first_name}!\n\n"
-        "Добро пожаловать в бот компании «Белоруснефть-Гомельоблнефтепродукт».\n\n"
-        "Выберите раздел в меню:",
-        reply_markup=main_menu()
-    )
+def handle_start(chat_id):
+    """Обработка команды /start"""
+    text = """👋 <b>Добро пожаловать!</b>
 
-@dp.message_handler(lambda message: message.text == '🏠 Главное меню')
-async def back_to_main(message: types.Message):
-    await message.answer("Главное меню:", reply_markup=main_menu())
+Я бот компании <b>«Белоруснефть-Гомельоблнефтепродукт»</b>
 
-@dp.message_handler(lambda message: message.text == '🏢 О компании')
-async def about_company(message: types.Message):
-    await message.answer(
-        "🏭 «Белоруснефть-Гомельоблнефтепродукт»\n\n"
-        "Компания создана в 1968 году.\n"
-        "В составе компании «Белоруснефть» с 2005 года.\n\n"
-        "Основные виды деятельности:\n"
-        "• Оптовая и розничная торговля нефтепродуктами\n"
-        "• Розничная торговля, общественное питание\n"
-        "• Оптовая торговля сопутствующими товарами\n\n"
-        "Вы — часть большой истории. Спасибо, что с нами!",
-        reply_markup=company_menu()
-    )
+🤖 Доступные команды:
+/start - начать работу
+/company - информация о компании
+/help - помощь
 
-@dp.message_handler(lambda message: message.text == '📜 История компании')
-async def history(message: types.Message):
-    await message.answer(
-        "📜 История компании:\n\n"
-        "«Белоруснефть-Гомельоблнефтепродукт» — часть системы «Белоруснефть».\n\n"
-        "📅 1968 год — создание предприятия\n"
-        "📅 2005 год — вхождение в состав «Белоруснефть»\n\n"
-        "Сегодня компания — лидер на рынке нефтепродуктов Гомельской области.",
-        reply_markup=company_menu()
-    )
+Просто напишите любое сообщение, и я отвечу!"""
+    send_message(chat_id, text)
 
-@dp.message_handler(lambda message: message.text == '⭐ Миссия и ценности')
-async def mission(message: types.Message):
-    await message.answer(
-        "⭐ Наша миссия:\n\n"
-        "«Постоянно совершенствуясь, расширяя сферу услуг, сохраняя лидерство на рынке, Мы движемся, опережая время.»\n\n"
-        "💎 Ценности:\n"
-        "• Клиентоцентричность\n"
-        "• Честность\n"
-        "• Ответственность\n"
-        "• Профессионализм\n"
-        "• Командность\n\n"
-        "Вы — главный носитель этих ценностей на своей АЗС!",
-        reply_markup=company_menu()
-    )
+def handle_company(chat_id):
+    """Информация о компании"""
+    text = """🏭 <b>О компании</b>
 
-@dp.message_handler(lambda message: message.text == '📋 Наши стандарты работы')
-async def standards(message: types.Message):
-    await message.answer(
-        "📋 Стандарты работы:\n\n"
-        "1️⃣ Чистота и порядок\n"
-        "2️⃣ Единое приветствие: «Добрый день! Чем могу помочь?»\n"
-        "3️⃣ Компетентность: «Я уточню у старшего оператора»\n"
-        "4️⃣ Прощание: «Спасибо за визит! Хорошей дороги!»",
-        reply_markup=company_menu()
-    )
+<b>«Белоруснефть-Гомельоблнефтепродукт»</b>
 
-@dp.message_handler(lambda message: message.text == '📞 Контакты')
-async def contacts(message: types.Message):
-    await message.answer(
-        "📞 Контакты:\n\n"
-        "📍 Адрес: пос. Янтарный 12, Гомельский р-н\n\n"
-        "📱 Телефоны:\n"
-        "+375 (232) 23-75-75\n"
-        "+375 (232) 24-22-40\n\n"
-        "🔸 Диспетчерская: +375(232) 24-22-88\n"
-        "🔸 Отдел кадров: номер у старшего оператора\n"
-        "🔸 Горячая линия: +375 (29) 6-431-431",
-        reply_markup=company_menu()
-    )
+📅 <b>История:</b>
+• Основана в 1968 году
+• В составе «Белоруснефть» с 2005 года
 
-@dp.message_handler(lambda message: message.text == '💪 Личность и адаптация')
-async def adaptation(message: types.Message):
-    await message.answer(
-        "💪 Поддержка сотрудников\n\n"
-        "Здесь вы найдете:\n"
-        "• Признаки профессионального выгорания\n"
-        "• Техники восстановления энергии\n"
-        "• Как работать со сложными клиентами\n"
-        "• Чек-листы для карьерного роста\n"
-        "• Советы по отношениям в коллективе\n\n"
-        "Скоро все материалы будут доступны!",
-        reply_markup=main_menu()
-    )
+📋 <b>Основные виды деятельности:</b>
+• Оптовая и розничная торговля нефтепродуктами
+• Розничная торговля, общественное питание
+• Оптовая торговля сопутствующими товарами
 
-@dp.message_handler(lambda message: message.text == '📚 Обучение маслам')
-async def oil_learning(message: types.Message):
-    await message.answer(
-        "📚 Курс по моторным маслам\n\n"
-        "Программа обучения (3 месяца):\n"
-        "• Вязкость и сезонность\n"
-        "• API, ACEA, допуски производителей\n"
-        "• Типы масел (минеральные, полусинтетика, синтетика)\n"
-        "• Частые ошибки операторов\n"
-        "• Специализированные масла\n"
-        "• Итоговый экзамен и сертификат\n\n"
-        "Скоро курс будет запущен!",
-        reply_markup=main_menu()
-    )
+⭐ <b>Наши ценности:</b>
+• Клиентоцентричность
+• Честность
+• Ответственность
+• Профессионализм
+• Командность
+
+<i>Вы — часть большой истории. Спасибо, что с нами!</i>"""
+    send_message(chat_id, text)
+
+def handle_help(chat_id):
+    """Помощь"""
+    text = """❓ <b>Помощь</b>
+
+Доступные команды:
+/start - начать работу
+/company - информация о компании
+/help - показать эту справку
+
+Скоро будут добавлены:
+• Тест на адаптацию
+• Обучение по маслам
+• Советы по работе с клиентами
+
+Следите за обновлениями!"""
+    send_message(chat_id, text)
+
+def handle_unknown(chat_id, text):
+    """Неизвестная команда"""
+    response = f"""🤔 Я не понимаю команду: <b>{text}</b>
+
+Доступные команды:
+/start - начать работу
+/company - информация о компании
+/help - помощь
+
+Просто нажмите на нужную команду в меню!"""
+    send_message(chat_id, response)
+
+def process_message(message):
+    """Обработка входящих сообщений"""
+    try:
+        chat_id = message['chat']['id']
+        text = message.get('text', '')
+        
+        logger.info(f"📨 Получено сообщение от {chat_id}: {text}")
+        
+        # Обработка команд
+        if text == '/start':
+            handle_start(chat_id)
+        elif text == '/company':
+            handle_company(chat_id)
+        elif text == '/help':
+            handle_help(chat_id)
+        else:
+            handle_unknown(chat_id, text)
+            
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки сообщения: {e}")
+
+def main():
+    """Главный цикл бота"""
+    global last_update_id
+    
+    logger.info("🚀 Бот запущен и начал прослушивание сообщений...")
+    
+    while True:
+        try:
+            # Получаем обновления
+            url = f"{BASE_URL}/getUpdates"
+            params = {
+                "offset": last_update_id + 1,
+                "timeout": 30
+            }
+            
+            response = requests.get(url, params=params, timeout=35)
+            data = response.json()
+            
+            if data.get('ok'):
+                updates = data.get('result', [])
+                for update in updates:
+                    last_update_id = update['update_id']
+                    
+                    if 'message' in update:
+                        process_message(update['message'])
+            else:
+                logger.error(f"❌ Ошибка API: {data}")
+                
+        except requests.exceptions.Timeout:
+            logger.warning("⚠️ Таймаут, продолжаем...")
+        except Exception as e:
+            logger.error(f"❌ Критическая ошибка: {e}")
+            time.sleep(5)
 
 if __name__ == '__main__':
-    print("🤖 Бот запущен и готов к работе!")
-    executor.start_polling(dp, skip_updates=True)
+    logger.info("=" * 50)
+    logger.info("🤖 ЗАПУСК БОТА")
+    logger.info("=" * 50)
+    main()
