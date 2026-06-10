@@ -1,11 +1,12 @@
-from oil_content import OIL_QUESTIONS_FULL, CARDS, CASES, STORIES
-from oil_handlers import get_cards_by_cycle, get_questions_by_cycle, get_test_questions
 import os
 import requests
 import json
 import time
 import logging
 import random
+
+from oil_content import OIL_QUESTIONS_FULL, CARDS, CASES, STORIES
+from oil_handlers import get_cards_by_cycle, get_questions_by_cycle, get_random_cases, get_random_stories, get_test_questions
 
 # Настройка логов
 logging.basicConfig(level=logging.INFO)
