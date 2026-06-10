@@ -382,7 +382,7 @@ def handle_adaptation(chat_id):
     send_keyboard(chat_id, ADAPTATION_MENU, buttons)
 
 def handle_oil(chat_id):
-    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Учебные материалы", "📝 Пройти тест (48 вопросов)", "🏠 В главное меню"]
+    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Истории", "📖 Учебные материалы", "📝 Пройти тест (48 вопросов)", "🏠 В главное меню"]
     send_keyboard(chat_id, "📚 Обучение маслам. Выберите действие:", buttons)
 
 def handle_burnout(chat_id):
@@ -612,6 +612,43 @@ def handle_cases_navigation(chat_id, action):
     user_cases_index[chat_id] = current
     show_case(chat_id)
 
+# ============= ИСТОРИИ =============
+
+user_stories_index = {}
+
+def show_story(chat_id):
+    """Показать текущую историю"""
+    idx = user_stories_index.get(chat_id, 0)
+    stories_list = STORIES
+    
+    if idx >= len(stories_list):
+        idx = 0
+        user_stories_index[chat_id] = 0
+    
+    story = stories_list[idx]
+    total = len(stories_list)
+    
+    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"📖 <b>История {idx + 1} из {total}</b>\n\n{story}", buttons)
+
+def handle_stories_navigation(chat_id, action):
+    """Обработка навигации по историям"""
+    if chat_id not in user_stories_index:
+        user_stories_index[chat_id] = 0
+    
+    stories_list = STORIES
+    current = user_stories_index[chat_id]
+    
+    if action == "prev":
+        current = (current - 1) % len(stories_list)
+    elif action == "next":
+        current = (current + 1) % len(stories_list)
+    elif action == "random":
+        current = random.randint(0, len(stories_list) - 1)
+    
+    user_stories_index[chat_id] = current
+    show_story(chat_id)
+
 # ============= ОСНОВНОЙ ЦИКЛ =============
 
 def process_message(message):
@@ -697,6 +734,15 @@ def process_message(message):
             handle_adaptation(chat_id)
         elif text == '📚 Обучение маслам':
             handle_oil(chat_id)
+        elif text == '📖 Истории':
+            user_stories_index[chat_id] = 0
+            show_story(chat_id)
+        elif text == '◀️ Предыстория':
+            handle_stories_navigation(chat_id, "prev")
+        elif text == '▶️ Следующая история':
+            handle_stories_navigation(chat_id, "next")
+        elif text == '🎲 Случайная история':
+            handle_stories_navigation(chat_id, "random")    
         elif text == '📖 Учебные материалы':
             show_oil_materials(chat_id)
         elif text == '📝 Пройти тест (8 вопросов)':
