@@ -368,6 +368,8 @@ def send_keyboard(chat_id, text, buttons):
 
 # ============= ОБРАБОТЧИКИ =============
 
+def handle_start(chat_id):
+    """Главное меню"""    
     keyboard = {"keyboard": [[{"text": "🏢 О компании"}], [{"text": "💪 Личность и адаптация"}], [{"text": "📚 Обучение маслам"}], [{"text": "❓ Помощь"}]], "resize_keyboard": True}
     text = "👋 Добро пожаловать! Я бот компании «Белоруснефть-Гомельоблнефтепродукт». Выберите раздел в меню."
     send_message(chat_id, text, keyboard)
