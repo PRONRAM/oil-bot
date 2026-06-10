@@ -855,6 +855,8 @@ def process_message(message):
             handle_oil(chat_id)
         elif text == '🏠 В главное меню':
             handle_start(chat_id)
+        elif text == '❓ Помощь':
+            show_help(chat_id)
         else:
             handle_start(chat_id)
             
