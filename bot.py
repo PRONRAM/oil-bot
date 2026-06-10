@@ -382,7 +382,7 @@ def handle_adaptation(chat_id):
     send_keyboard(chat_id, ADAPTATION_MENU, buttons)
 
 def handle_oil(chat_id):
-    buttons = ["📖 Учебные материалы", "📝 Пройти тест (8 вопросов)", "🏠 В главное меню"]
+    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Учебные материалы", "📝 Пройти тест (48 вопросов)", "🏠 В главное меню"]
     send_keyboard(chat_id, "📚 Обучение маслам. Выберите действие:", buttons)
 
 def handle_burnout(chat_id):
@@ -573,6 +573,44 @@ def handle_card_navigation(chat_id, action):
     
     user_card_index[chat_id] = current
     show_card(chat_id)
+    
+# ============= КЕЙСЫ "КАК ПРОДАТЬ" =============
+
+user_cases_index = {}
+
+def show_case(chat_id):
+    """Показать текущий кейс"""
+    idx = user_cases_index.get(chat_id, 0)
+    cases_list = CASES
+    
+    if idx >= len(cases_list):
+        idx = 0
+        user_cases_index[chat_id] = 0
+    
+    case = cases_list[idx]
+    case_text = f"<b>Кейс {idx + 1} из {len(cases_list)}</b>\n\n📌 <b>Ситуация:</b>\n{case['text']}\n\n✅ <b>Правильный ответ:</b>\n{case['answer']}"
+    total = len(cases_list)
+    
+    buttons = ["◀️ Предыдущий", "▶️ Следующий", "🎲 Случайный", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"💼 <b>Как продать?</b>\n\n{case_text}", buttons)
+
+def handle_cases_navigation(chat_id, action):
+    """Обработка навигации по кейсам"""
+    if chat_id not in user_cases_index:
+        user_cases_index[chat_id] = 0
+    
+    cases_list = CASES
+    current = user_cases_index[chat_id]
+    
+    if action == "prev":
+        current = (current - 1) % len(cases_list)
+    elif action == "next":
+        current = (current + 1) % len(cases_list)
+    elif action == "random":
+        current = random.randint(0, len(cases_list) - 1)
+    
+    user_cases_index[chat_id] = current
+    show_case(chat_id)
 
 # ============= ОСНОВНОЙ ЦИКЛ =============
 
