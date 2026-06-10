@@ -459,7 +459,8 @@ def finish_adaptation_test(chat_id):
     del user_test_answers[chat_id]
 
 def start_oil_test(chat_id):
-    questions = random.sample(OIL_QUESTIONS, min(5, len(OIL_QUESTIONS)))
+    """Начать тест по маслам (из 48 вопросов, случайные 5)"""
+    questions = random.sample(OIL_QUESTIONS_FULL, min(5, len(OIL_QUESTIONS_FULL)))
     user_test_answers[chat_id] = {"current": 0, "correct": 0, "questions": questions, "type": "oil"}
     send_oil_question(chat_id)
 
@@ -505,6 +506,7 @@ def process_oil_answer(chat_id, answer_text):
     send_oil_question(chat_id)
 
 def finish_oil_test(chat_id):
+    """Завершение теста по маслам"""
     data = user_test_answers.get(chat_id)
     if not data:
         return
@@ -520,8 +522,15 @@ def finish_oil_test(chat_id):
     else:
         result = "📖 Стоит поучиться! Изучите материалы и пройдите тест снова."
     
-    buttons = ["📖 Учебные материалы", "📝 Пройти тест (8 вопросов)", "🏠 В главное меню"]
-    send_keyboard(chat_id, f"✅ Тест пройден!\nПравильных: {correct} из {total} ({score}%)\n\n{result}", buttons)
+    buttons = ["📖 Учебные материалы", "📝 Пройти тест (8 вопросов)", "🏠 В главное меню", "◀️ В меню обучения"]
+    
+    send_keyboard(chat_id, 
+        f"✅ Тест пройден!\n\n"
+        f"Правильных ответов: {correct} из {total}\n"
+        f"Результат: {score}%\n\n"
+        f"{result}", 
+        buttons)
+     
     del user_test_answers[chat_id]
 
 def show_oil_materials(chat_id):
