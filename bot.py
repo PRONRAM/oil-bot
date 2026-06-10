@@ -537,6 +537,43 @@ def show_oil_materials(chat_id):
     buttons = ["📝 Пройти тест (8 вопросов)", "🏠 В главное меню"]
     send_keyboard(chat_id, OIL_MATERIALS, buttons)
 
+# ============= КАРТОЧКИ ЗНАНИЙ =============
+
+user_card_index = {}
+
+def show_card(chat_id):
+    """Показать текущую карточку"""
+    idx = user_card_index.get(chat_id, 0)
+    cards_list = list(CARDS.values())
+    
+    if idx >= len(cards_list):
+        idx = 0
+        user_card_index[chat_id] = 0
+    
+    card_text = cards_list[idx]
+    total = len(cards_list)
+    
+    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"📇 <b>Карточка {idx + 1} из {total}</b>\n\n{card_text}", buttons)
+
+def handle_card_navigation(chat_id, action):
+    """Обработка навигации по карточкам"""
+    if chat_id not in user_card_index:
+        user_card_index[chat_id] = 0
+    
+    cards_list = list(CARDS.values())
+    current = user_card_index[chat_id]
+    
+    if action == "prev":
+        current = (current - 1) % len(cards_list)
+    elif action == "next":
+        current = (current + 1) % len(cards_list)
+    elif action == "random":
+        current = random.randint(0, len(cards_list) - 1)
+    
+    user_card_index[chat_id] = current
+    show_card(chat_id)
+
 # ============= ОСНОВНОЙ ЦИКЛ =============
 
 def process_message(message):
