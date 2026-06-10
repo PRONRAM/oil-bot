@@ -628,7 +628,7 @@ def show_story(chat_id):
     story = stories_list[idx]
     total = len(stories_list)
     
-    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "◀️ В меню обучения"]
+    buttons = ["◀️ Предыстория", "▶️ Следующая история", "🎲 Случайная история", "◀️ В меню обучения"]
     send_keyboard(chat_id, f"📖 <b>История {idx + 1} из {total}</b>\n\n{story}", buttons)
 
 def handle_stories_navigation(chat_id, action):
@@ -734,19 +734,39 @@ def process_message(message):
             handle_adaptation(chat_id)
         elif text == '📚 Обучение маслам':
             handle_oil(chat_id)
+        elif text == '📇 Карточки знаний':
+            user_card_index[chat_id] = 0
+            show_card(chat_id)
+        elif text == '💼 Кейсы':
+            user_cases_index[chat_id] = 0
+            show_case(chat_id)
         elif text == '📖 Истории':
             user_stories_index[chat_id] = 0
             show_story(chat_id)
+        elif text == '◀️ Предыдущая':
+            handle_card_navigation(chat_id, "prev")
+        elif text == '▶️ Следующая':
+            handle_card_navigation(chat_id, "next")
+        elif text == '🎲 Случайная':
+            handle_card_navigation(chat_id, "random")
+        elif text == '◀️ Предыдущий':
+            handle_cases_navigation(chat_id, "prev")
+        elif text == '▶️ Следующий':
+            handle_cases_navigation(chat_id, "next")
+        elif text == '🎲 Случайный':
+            handle_cases_navigation(chat_id, "random")
         elif text == '◀️ Предыстория':
             handle_stories_navigation(chat_id, "prev")
         elif text == '▶️ Следующая история':
             handle_stories_navigation(chat_id, "next")
         elif text == '🎲 Случайная история':
-            handle_stories_navigation(chat_id, "random")    
+            handle_stories_navigation(chat_id, "random") 
         elif text == '📖 Учебные материалы':
             show_oil_materials(chat_id)
-        elif text == '📝 Пройти тест (8 вопросов)':
+        elif text == '📝 Пройти тест (48 вопросов)':
             start_oil_test(chat_id)
+        elif text == '◀️ В меню обучения':
+            handle_oil(chat_id)
         elif text == '🏠 В главное меню':
             handle_start(chat_id)
         else:
