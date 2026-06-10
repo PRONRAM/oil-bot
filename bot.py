@@ -382,7 +382,7 @@ def handle_adaptation(chat_id):
     send_keyboard(chat_id, ADAPTATION_MENU, buttons)
 
 def handle_oil(chat_id):
-    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Истории", "📖 Учебные материалы", "📝 Пройти тест (48 вопросов)", "🏠 В главное меню"]
+    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Истории", "📖 Учебные материалы", "🎯 Выбрать цикл", "📝 Пройти тест", "🏠 В главное меню"]
     send_keyboard(chat_id, "📚 Обучение маслам. Выберите действие:", buttons)
 
 def handle_burnout(chat_id):
@@ -459,9 +459,14 @@ def finish_adaptation_test(chat_id):
     del user_test_answers[chat_id]
 
 def start_oil_test(chat_id):
-    """Начать тест по маслам (из 48 вопросов, случайные 5)"""
-    questions = random.sample(OIL_QUESTIONS_FULL, min(5, len(OIL_QUESTIONS_FULL)))
-    user_test_answers[chat_id] = {"current": 0, "correct": 0, "questions": questions, "type": "oil"}
+    """Начать тест по маслам из текущего цикла"""
+    cycle = user_cycle.get(chat_id, 1)
+    questions = get_test_questions(cycle, count=5)
+    
+    if not questions:
+        questions = random.sample(OIL_QUESTIONS_FULL, 5)
+    
+    user_test_answers[chat_id] = {"current": 0, "correct": 0, "questions": questions, "type": "oil", "cycle": cycle}
     send_oil_question(chat_id)
 
 def send_oil_question(chat_id):
@@ -542,9 +547,16 @@ def show_oil_materials(chat_id):
 user_card_index = {}
 
 def show_card(chat_id):
-    """Показать текущую карточку"""
+    """Показать карточку из текущего цикла"""
+    cycle = user_cycle.get(chat_id, 1)
+    
+    # Получаем карточки для цикла (5 штук)
+    cards_list = get_cards_by_cycle(cycle)
+    
+    if not cards_list:
+        cards_list = list(CARDS.values())[:5]
+    
     idx = user_card_index.get(chat_id, 0)
-    cards_list = list(CARDS.values())
     
     if idx >= len(cards_list):
         idx = 0
@@ -553,8 +565,8 @@ def show_card(chat_id):
     card_text = cards_list[idx]
     total = len(cards_list)
     
-    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "◀️ В меню обучения"]
-    send_keyboard(chat_id, f"📇 <b>Карточка {idx + 1} из {total}</b>\n\n{card_text}", buttons)
+    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "🎯 Сменить цикл", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"📇 <b>Цикл {cycle} | Карточка {idx + 1} из {total}</b>\n\n{card_text}", buttons)
 
 def handle_card_navigation(chat_id, action):
     """Обработка навигации по карточкам"""
@@ -648,6 +660,21 @@ def handle_stories_navigation(chat_id, action):
     
     user_stories_index[chat_id] = current
     show_story(chat_id)
+
+# ============= ВЫБОР ЦИКЛА =============
+
+user_cycle = {}  # Хранит текущий цикл пользователя (1-6)
+
+def select_cycle(chat_id):
+    """Показать меню выбора цикла"""
+    buttons = ["1️⃣ Цикл 1 (Вязкость)", "2️⃣ Цикл 2 (API, ACEA)", "3️⃣ Цикл 3 (Типы масел)", "4️⃣ Цикл 4 (Ошибки)", "5️⃣ Цикл 5 (Спецмасла)", "6️⃣ Цикл 6 (Повторение)", "◀️ В меню обучения"]
+    current = user_cycle.get(chat_id, 1)
+    send_keyboard(chat_id, f"🎯 <b>Выберите цикл обучения</b>\n\nТекущий цикл: {current}\n\nВ каждом цикле:\n• 5 карточек\n• 8 вопросов\n• Промежуточный тест", buttons)
+
+def set_user_cycle(chat_id, cycle):
+    """Установить цикл пользователя"""
+    user_cycle[chat_id] = cycle
+    send_keyboard(chat_id, f"✅ Установлен <b>Цикл {cycle}</b>\n\nТеперь карточки и тест будут из этого цикла.\n\nВыберите действие:", ["📇 Карточки цикла", "📝 Тест цикла", "◀️ В меню обучения"])
 
 # ============= ОСНОВНОЙ ЦИКЛ =============
 
@@ -763,6 +790,27 @@ def process_message(message):
             handle_stories_navigation(chat_id, "random") 
         elif text == '📖 Учебные материалы':
             show_oil_materials(chat_id)
+        elif text == '🎯 Выбрать цикл':
+            select_cycle(chat_id)
+        elif text == '1️⃣ Цикл 1 (Вязкость)':
+            set_user_cycle(chat_id, 1)
+        elif text == '2️⃣ Цикл 2 (API, ACEA)':
+            set_user_cycle(chat_id, 2)
+        elif text == '3️⃣ Цикл 3 (Типы масел)':
+            set_user_cycle(chat_id, 3)
+        elif text == '4️⃣ Цикл 4 (Ошибки)':
+            set_user_cycle(chat_id, 4)
+        elif text == '5️⃣ Цикл 5 (Спецмасла)':
+            set_user_cycle(chat_id, 5)
+        elif text == '6️⃣ Цикл 6 (Повторение)':
+            set_user_cycle(chat_id, 6)
+        elif text == '📇 Карточки цикла':
+            user_card_index[chat_id] = 0
+            show_card(chat_id)
+        elif text == '📝 Тест цикла':
+            start_oil_test(chat_id)
+        elif text == '🎯 Сменить цикл':
+            select_cycle(chat_id)    
         elif text == '📝 Пройти тест (48 вопросов)':
             start_oil_test(chat_id)
         elif text == '◀️ В меню обучения':
