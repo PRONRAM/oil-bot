@@ -4,6 +4,8 @@ import json
 import time
 import logging
 import random
+import threading
+from flask import Flask
 
 from oil_content import OIL_QUESTIONS_FULL, CARDS, CASES, STORIES
 from oil_handlers import get_cards_by_cycle, get_questions_by_cycle, get_random_cases, get_random_stories, get_test_questions
@@ -882,6 +884,28 @@ def main():
         except Exception as e:
             logger.error(f"Ошибка: {e}")
             time.sleep(5)
+            
+# ============= ВЕБ-СЕРВЕР ДЛЯ RENDER =============
 
+app = Flask(__name__)
+
+@app.route('/')
+@app.route('/health')
+def health_check():
+    return "Bot is alive!", 200
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+
+# ============= ЗАПУСК =============
+
+if __name__ == '__main__':
+    # Запускаем веб-сервер в фоновом потоке
+    web_thread = threading.Thread(target=run_web_server, daemon=True)
+    web_thread.start()
+    
+    # Запускаем основную функцию бота
+    main()
 if __name__ == '__main__':
     main()
