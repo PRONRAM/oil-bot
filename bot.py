@@ -7,6 +7,51 @@ import random
 import threading
 from flask import Flask
 
+def check_cycle_completion(chat_id, cycle):
+    """
+    Проверяет, все ли материалы цикла просмотрены.
+    Возвращает True, если карточки, кейсы и истории просмотрены.
+    """
+    # Получаем прогресс пользователя по этому циклу
+    progress = user_progress.get(chat_id, {}).get(cycle, {})
+    
+    # Проверяем, что все три материала отмечены как просмотренные
+    cards_done = progress.get("cards", False)
+    cases_done = progress.get("cases", False)
+    stories_done = progress.get("stories", False)
+    
+    return cards_done and cases_done and stories_done
+
+
+def mark_material_viewed(chat_id, cycle, material):
+    """
+    Отмечает, что материал просмотрен.
+    material может быть: "cards", "cases", "stories"
+    """
+    # Создаём структуру, если её нет
+    if chat_id not in user_progress:
+        user_progress[chat_id] = {}
+    
+    if cycle not in user_progress[chat_id]:
+        user_progress[chat_id][cycle] = {"cards": False, "cases": False, "stories": False}
+    
+    # Отмечаем конкретный материал как просмотренный
+    user_progress[chat_id][cycle][material] = True
+    
+    # Проверяем, все ли материалы теперь просмотрены
+    if check_cycle_completion(chat_id, cycle):
+        # Если всё просмотрено — показываем сообщение и кнопку теста
+        buttons = ["📝 Пройти тест цикла", "🎯 Выбрать другой цикл", "🏠 В главное меню"]
+        send_keyboard(
+            chat_id, 
+            f"🎉 <b>Поздравляю! Цикл {cycle} полностью пройден!</b>\n\n"
+            f"✅ Вы изучили все карточки\n"
+            f"✅ Вы изучили все кейсы\n"
+            f"✅ Вы прочитали все истории\n\n"
+            f"📝 Теперь вам доступен тест по этому циклу!",
+            buttons
+        )
+
 from oil_content import OIL_QUESTIONS_FULL, CARDS, CASES, STORIES
 from oil_handlers import get_cards_by_cycle, get_questions_by_cycle, get_random_cases, get_random_stories, get_test_questions
 
@@ -385,8 +430,18 @@ def handle_adaptation(chat_id):
     send_keyboard(chat_id, ADAPTATION_MENU, buttons)
 
 def handle_oil(chat_id):
-    buttons = ["📇 Карточки знаний", "💼 Кейсы", "📖 Истории", "📖 Учебные материалы", "🎯 Выбрать цикл", "📝 Пройти тест", "🏠 В главное меню"]
-    send_keyboard(chat_id, "📚 Обучение маслам. Выберите действие:", buttons)
+    buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "🎯 Выбрать цикл", "🏠 В главное меню"]
+    welcome_text = """🛢 <b>Готов стать профессионалом в масляной сфере?</b>
+
+Я подготовил тебе <b>6 циклов простого обучения</b>.
+
+📖 Узнавай увлекательные факты
+📄 Интересную информацию про масла
+💰 Помощь в работе с возражениями
+📃 Подведём итоги твоих знаний тестами
+
+<b>Выбирай цикл и полетели!</b> 😉"""
+    send_keyboard(chat_id, welcome_text, buttons)
 
 def handle_burnout(chat_id):
     buttons = ["❓ Что делать?", "😫 А если уже всё бесит?", "◀️ В меню адаптации"]
@@ -462,12 +517,36 @@ def finish_adaptation_test(chat_id):
     del user_test_answers[chat_id]
 
 def start_oil_test(chat_id):
-    """Начать тест по маслам из текущего цикла"""
+    """Начать тест по маслам из текущего цикла (только если материалы просмотрены)"""
     cycle = user_cycle.get(chat_id, 1)
-    questions = get_test_questions(cycle, count=5)
+    
+    # ========== ПРОВЕРКА ДОСТУПА К ТЕСТУ ==========
+    if not check_cycle_completion(chat_id, cycle):
+        # Показываем, какие материалы остались непросмотренными
+        progress = user_progress.get(chat_id, {}).get(cycle, {})
+        missing = []
+        if not progress.get("cards", False):
+            missing.append("📇 Знаешь ли ты (карточки)")
+        if not progress.get("cases", False):
+            missing.append("💰 Как продать (кейсы)")
+        if not progress.get("stories", False):
+            missing.append("📖 История на сегодня")
+        
+        missing_text = "\n".join(missing)
+        send_keyboard(
+            chat_id,
+            f"🔒 <b>Тест цикла {cycle} пока недоступен!</b>\n\n"
+            f"Сначала изучите все материалы этого цикла:\n\n{missing_text}\n\n"
+            f"После просмотра всех материалов тест откроется автоматически.",
+            ["◀️ В меню обучения"]
+        )
+        return
+    # ============================================
+    
+    questions = get_test_questions(cycle, count=8)  # 8 вопросов, как в сценарии
     
     if not questions:
-        questions = random.sample(OIL_QUESTIONS_FULL, 5)
+        questions = random.sample(OIL_QUESTIONS_FULL, 8)
     
     user_test_answers[chat_id] = {"current": 0, "correct": 0, "questions": questions, "type": "oil", "cycle": cycle}
     send_oil_question(chat_id)
@@ -568,6 +647,12 @@ def show_card(chat_id):
     card_text = cards_list[idx]
     total = len(cards_list)
     
+    # ========== НОВЫЙ КОД ==========
+    # Если пользователь просмотрел последнюю карточку, отмечаем цикл
+    if idx == total - 1:
+        mark_material_viewed(chat_id, cycle, "cards")
+    # ================================
+    
     buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "🎯 Сменить цикл", "◀️ В меню обучения"]
     send_keyboard(chat_id, f"📇 <b>Цикл {cycle} | Карточка {idx + 1} из {total}</b>\n\n{card_text}", buttons)
 
@@ -594,20 +679,32 @@ def handle_card_navigation(chat_id, action):
 user_cases_index = {}
 
 def show_case(chat_id):
-    """Показать текущий кейс"""
+    """Показать кейс из текущего цикла"""
+    cycle = user_cycle.get(chat_id, 1)
+    cases_list = get_cases_by_cycle(cycle)  # Нужно создать эту функцию
+    
+    if not cases_list:
+        cases_list = CASES[:4]
+    
     idx = user_cases_index.get(chat_id, 0)
-    cases_list = CASES
     
     if idx >= len(cases_list):
         idx = 0
         user_cases_index[chat_id] = 0
     
     case = cases_list[idx]
-    case_text = f"<b>Кейс {idx + 1} из {len(cases_list)}</b>\n\n📌 <b>Ситуация:</b>\n{case['text']}\n\n✅ <b>Правильный ответ:</b>\n{case['answer']}"
     total = len(cases_list)
     
-    buttons = ["◀️ Предыдущий", "▶️ Следующий", "🎲 Случайный", "◀️ В меню обучения"]
-    send_keyboard(chat_id, f"💼 <b>Как продать?</b>\n\n{case_text}", buttons)
+    case_text = f"<b>Кейс {idx + 1} из {total}</b>\n\n📌 <b>Ситуация:</b>\n{case['text']}\n\n✅ <b>Правильный ответ:</b>\n{case['answer']}"
+    
+    # ========== НОВЫЙ КОД ==========
+    # Если пользователь просмотрел последний кейс, отмечаем цикл
+    if idx == total - 1:
+        mark_material_viewed(chat_id, cycle, "cases")
+    # ================================
+    
+    buttons = ["◀️ Предыдущий", "▶️ Следующий", "🎲 Случайный", "🎯 Сменить цикл", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"💰 <b>Как продать? Цикл {cycle}</b>\n\n{case_text}", buttons)
 
 def handle_cases_navigation(chat_id, action):
     """Обработка навигации по кейсам"""
@@ -632,9 +729,11 @@ def handle_cases_navigation(chat_id, action):
 user_stories_index = {}
 
 def show_story(chat_id):
-    """Показать текущую историю"""
+    """Показать историю из текущего цикла"""
+    cycle = user_cycle.get(chat_id, 1)
+    stories_list = get_stories_by_cycle(cycle)
+    
     idx = user_stories_index.get(chat_id, 0)
-    stories_list = STORIES
     
     if idx >= len(stories_list):
         idx = 0
@@ -643,8 +742,14 @@ def show_story(chat_id):
     story = stories_list[idx]
     total = len(stories_list)
     
-    buttons = ["◀️ Предыстория", "▶️ Следующая история", "🎲 Случайная история", "◀️ В меню обучения"]
-    send_keyboard(chat_id, f"📖 <b>История {idx + 1} из {total}</b>\n\n{story}", buttons)
+    # ========== НОВЫЙ КОД ==========
+    # Если пользователь просмотрел последнюю историю, отмечаем цикл
+    if idx == total - 1:
+        mark_material_viewed(chat_id, cycle, "stories")
+    # ================================
+    
+    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "🎯 Сменить цикл", "◀️ В меню обучения"]
+    send_keyboard(chat_id, f"📖 <b>Цикл {cycle} | История {idx + 1} из {total}</b>\n\n{story}", buttons)
 
 def handle_stories_navigation(chat_id, action):
     """Обработка навигации по историям"""
@@ -669,16 +774,76 @@ def handle_stories_navigation(chat_id, action):
 user_cycle = {}  # Хранит текущий цикл пользователя (1-6)
 
 def select_cycle(chat_id):
-    """Показать меню выбора цикла"""
-    buttons = ["1️⃣ Цикл 1 (Вязкость)", "2️⃣ Цикл 2 (API, ACEA)", "3️⃣ Цикл 3 (Типы масел)", "4️⃣ Цикл 4 (Ошибки)", "5️⃣ Цикл 5 (Спецмасла)", "6️⃣ Цикл 6 (Повторение)", "◀️ В меню обучения"]
+    """Показать меню выбора цикла с отображением прогресса"""
+    buttons = []
+    
+    for cycle_num in range(1, 7):
+        # Проверяем, пройден ли этот цикл
+        if check_cycle_completion(chat_id, cycle_num):
+            # Пройденный цикл — с галочкой
+            buttons.append(f"✅ Цикл {cycle_num} (пройден)")
+        else:
+            # Непройденный цикл
+            buttons.append(f"{cycle_num}️⃣ Цикл {cycle_num}")
+    
+    buttons.append("◀️ В меню обучения")
+    
+    # Считаем, сколько циклов пройдено
+    completed_count = sum(1 for c in range(1, 7) if check_cycle_completion(chat_id, c))
+    
+    status_text = f"🎯 <b>Выбор цикла обучения</b>\n\n"
+    status_text += f"📊 Пройдено циклов: {completed_count} из 6\n\n"
+    
+    if completed_count == 6:
+        status_text += "🏆 <b>Вы прошли все циклы! Доступен итоговый тест!</b>\n\n"
+        buttons.insert(0, "🎓 Итоговый тест")
+    
     current = user_cycle.get(chat_id, 1)
-    send_keyboard(chat_id, f"🎯 <b>Выберите цикл обучения</b>\n\nТекущий цикл: {current}\n\nВ каждом цикле:\n• 5 карточек\n• 8 вопросов\n• Промежуточный тест", buttons)
-
+    status_text += f"📍 Текущий цикл: {current}\n\n"
+    status_text += f"Выберите цикл для изучения:"
+    
+    send_keyboard(chat_id, status_text, buttons)
+    
 def set_user_cycle(chat_id, cycle):
-    """Установить цикл пользователя"""
+    """Установить цикл пользователя и показать меню"""
     user_cycle[chat_id] = cycle
-    send_keyboard(chat_id, f"✅ Установлен <b>Цикл {cycle}</b>\n\nТеперь карточки и тест будут из этого цикла.\n\nВыберите действие:", ["📇 Карточки цикла", "📝 Тест цикла", "◀️ В меню обучения"])
-
+    
+    # Проверяем, какие материалы уже просмотрены в этом цикле
+    progress = user_progress.get(chat_id, {}).get(cycle, {})
+    
+    # Формируем сообщение о прогрессе
+    status_parts = []
+    if progress.get("cards", False):
+        status_parts.append("✅ Карточки изучены")
+    else:
+        status_parts.append("❌ Карточки не изучены")
+    
+    if progress.get("cases", False):
+        status_parts.append("✅ Кейсы изучены")
+    else:
+        status_parts.append("❌ Кейсы не изучены")
+    
+    if progress.get("stories", False):
+        status_parts.append("✅ Истории изучены")
+    else:
+        status_parts.append("❌ Истории не изучены")
+    
+    status_text = f"📚 <b>Цикл {cycle}</b>\n\n"
+    status_text += "\n".join(status_parts)
+    status_text += f"\n\n<b>Доступные материалы:</b>\n"
+    status_text += f"📇 Знаешь ли ты — карточки для изучения\n"
+    status_text += f"💰 Как продать — кейсы с клиентами\n"
+    status_text += f"📖 История на сегодня — интересные факты"
+    
+    # Проверяем, можно ли уже проходить тест
+    if check_cycle_completion(chat_id, cycle):
+        status_text += f"\n\n🎓 Тест по циклу {cycle} доступен!"
+        buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "📝 Пройти тест цикла", "🎯 Выбрать другой цикл", "🏠 В главное меню"]
+    else:
+        buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "🎯 Выбрать другой цикл", "🏠 В главное меню"]
+    
+    send_keyboard(chat_id, status_text, buttons)
+    
 def show_help(chat_id):
     """Показать справку"""
     help_text = """
