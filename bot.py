@@ -7,6 +7,9 @@ import random
 import threading
 from flask import Flask
 
+# Отслеживание прогресса в цикле
+user_progress = {}  # {chat_id: {cycle: {"cards": False, "cases": False, "stories": False}}}
+
 def check_cycle_completion(chat_id, cycle):
     """
     Проверяет, все ли материалы цикла просмотрены.
