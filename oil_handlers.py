@@ -3,6 +3,11 @@
 import random
 from oil_content import CARDS, CASES, STORIES, OIL_QUESTIONS_FULL
 
+def get_cases_by_cycle(cycle):
+    """Получить кейсы для цикла (по 4 штуки)"""
+    from oil_content import CASES_BY_CYCLE
+    return CASES_BY_CYCLE.get(cycle, CASES_BY_CYCLE[1])
+
 def get_cards_by_cycle(cycle):
     """Получить карточки для цикла (по 5 карточек на цикл)"""
     cards_per_cycle = 5
