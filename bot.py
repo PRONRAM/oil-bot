@@ -19,45 +19,45 @@ if not BOT_TOKEN:
     exit(1)
 
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-last_update_id = 0
 
-# Хранилище для данных пользователей
-user_test_answers = {}
-client_index = {}
-user_cycle = {}
-user_card_index = {}
-user_cases_index = {}
-user_stories_index = {}
-user_progress = {}  # {chat_id: {cycle: {"cards": bool, "cases": bool, "stories": bool}}}
+# Импорты базы данных
+from database import init_db, save_user, get_user_progress, update_progress, save_test_result, get_completed_cycles
 
 # Импорты контента
 from oil_content import OIL_QUESTIONS_FULL, CARDS_BY_CYCLE, CASES_BY_CYCLE, STORIES_BY_CYCLE
 from oil_handlers import get_cards_by_cycle, get_cases_by_cycle, get_stories_by_cycle, get_questions_by_cycle, get_test_questions
 
+# Инициализация базы данных при запуске
+init_db()
+
+# Хранилище для временных данных (сессии, тесты)
+user_test_answers = {}
+user_cycle = {}
+user_card_index = {}
+user_cases_index = {}
+user_stories_index = {}
+client_index = {}
 
 # ============= ФУНКЦИИ ДЛЯ ОТСЛЕЖИВАНИЯ ПРОГРЕССА =============
 
 def check_cycle_completion(chat_id, cycle):
-    """Проверяет, все ли материалы цикла просмотрены."""
-    progress = user_progress.get(chat_id, {}).get(cycle, {})
-    cards_done = progress.get("cards", False)
-    cases_done = progress.get("cases", False)
-    stories_done = progress.get("stories", False)
+    """Проверяет, все ли материалы цикла просмотрены (из БД)"""
+    progress = get_user_progress(chat_id)
+    cycle_data = progress.get(cycle, {})
+    cards_done = cycle_data.get('cards', False)
+    cases_done = cycle_data.get('cases', False)
+    stories_done = cycle_data.get('stories', False)
     return cards_done and cases_done and stories_done
 
 
 def mark_material_viewed(chat_id, cycle, material):
-    """Отмечает, что материал просмотрен."""
-    if chat_id not in user_progress:
-        user_progress[chat_id] = {}
-    if cycle not in user_progress[chat_id]:
-        user_progress[chat_id][cycle] = {"cards": False, "cases": False, "stories": False}
-    
-    user_progress[chat_id][cycle][material] = True
-    
-    if check_cycle_completion(chat_id, cycle):
-        # Обновляем меню цикла, чтобы показать кнопку теста
-        set_user_cycle(chat_id, cycle)
+    """Отмечает, что материал просмотрен (сохраняет в БД)"""
+    update_progress(chat_id, cycle, material, True)
+
+
+def get_completed_cycles_count(chat_id):
+    """Получить количество пройденных циклов"""
+    return len(get_completed_cycles(chat_id))
 
 
 # ============= ФУНКЦИИ ОТПРАВКИ =============
@@ -84,6 +84,9 @@ def send_keyboard(chat_id, text, buttons):
 
 def handle_start(chat_id):
     """Главное меню"""
+    # Сохраняем пользователя в БД
+    save_user(chat_id)
+    
     keyboard = {
         "keyboard": [
             [{"text": "🏢 О компании"}],
@@ -234,8 +237,8 @@ CONTACTS = """
 
 def handle_oil(chat_id):
     """Главное меню обучения маслам"""
-    # Проверяем, все ли циклы пройдены
-    completed_count = sum(1 for c in range(1, 7) if check_cycle_completion(chat_id, c))
+    # Получаем количество пройденных циклов из БД
+    completed_count = get_completed_cycles_count(chat_id)
     
     buttons = ["🎯 Выбрать цикл", "🏠 В главное меню"]
     
@@ -261,16 +264,18 @@ def handle_oil(chat_id):
 def select_cycle(chat_id):
     """Показать меню выбора цикла с отображением прогресса"""
     buttons = []
+    progress = get_user_progress(chat_id)
+    completed_cycles = get_completed_cycles(chat_id)
     
     for cycle_num in range(1, 7):
-        if check_cycle_completion(chat_id, cycle_num):
+        if cycle_num in completed_cycles:
             buttons.append(f"✅ Цикл {cycle_num} (пройден)")
         else:
             buttons.append(f"{cycle_num}️⃣ Цикл {cycle_num}")
     
     buttons.append("🏠 В главное меню")
     
-    completed_count = sum(1 for c in range(1, 7) if check_cycle_completion(chat_id, c))
+    completed_count = len(completed_cycles)
     
     status_text = f"🎯 <b>Выбор цикла обучения</b>\n\n"
     status_text += f"📊 Пройдено циклов: {completed_count} из 6\n\n"
@@ -288,21 +293,22 @@ def set_user_cycle(chat_id, cycle):
     """Установить цикл пользователя и показать меню цикла"""
     user_cycle[chat_id] = cycle
     
-    progress = user_progress.get(chat_id, {}).get(cycle, {})
+    progress = get_user_progress(chat_id)
+    cycle_data = progress.get(cycle, {})
     
     # Формируем статус
     status_parts = []
-    if progress.get("cards", False):
+    if cycle_data.get('cards', False):
         status_parts.append("✅ Карточки изучены")
     else:
         status_parts.append("❌ Карточки не изучены")
     
-    if progress.get("cases", False):
+    if cycle_data.get('cases', False):
         status_parts.append("✅ Кейсы изучены")
     else:
         status_parts.append("❌ Кейсы не изучены")
     
-    if progress.get("stories", False):
+    if cycle_data.get('stories', False):
         status_parts.append("✅ Истории изучены")
     else:
         status_parts.append("❌ Истории не изучены")
@@ -339,7 +345,7 @@ def show_card(chat_id):
     card_text = cards_list[idx]
     total = len(cards_list)
     
-    # Если просмотрена последняя карточка, отмечаем
+    # Если просмотрена последняя карточка, отмечаем в БД
     if idx == total - 1:
         mark_material_viewed(chat_id, cycle, "cards")
     
@@ -395,13 +401,14 @@ def start_oil_test(chat_id):
     
     # Проверяем, все ли материалы изучены
     if not check_cycle_completion(chat_id, cycle):
-        progress = user_progress.get(chat_id, {}).get(cycle, {})
+        progress = get_user_progress(chat_id)
+        cycle_data = progress.get(cycle, {})
         missing = []
-        if not progress.get("cards", False):
+        if not cycle_data.get('cards', False):
             missing.append("📇 Знаешь ли ты (карточки)")
-        if not progress.get("cases", False):
+        if not cycle_data.get('cases', False):
             missing.append("💰 Как продать (кейсы)")
-        if not progress.get("stories", False):
+        if not cycle_data.get('stories', False):
             missing.append("📖 История на сегодня")
         
         missing_text = "\n".join(missing)
@@ -470,9 +477,13 @@ def finish_oil_test(chat_id):
     if not data:
         return
     
+    cycle = data.get("cycle", 1)
     correct = data["correct"]
     total = len(data["questions"])
     score = int(correct / total * 100)
+    
+    # Сохраняем результат в БД
+    save_test_result(chat_id, "oil", score, total, cycle)
     
     if score >= 80:
         result = "🎉 Отлично! Вы хорошо знаете материалы цикла!"
@@ -483,7 +494,7 @@ def finish_oil_test(chat_id):
     
     buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "🎯 Сменить цикл", "🏠 В главное меню"]
     send_keyboard(chat_id, 
-        f"✅ <b>Тест цикла {data['cycle']} пройден!</b>\n\n"
+        f"✅ <b>Тест цикла {cycle} пройден!</b>\n\n"
         f"Правильных ответов: {correct} из {total}\n"
         f"Результат: {score}%\n\n"
         f"{result}", 
@@ -553,6 +564,9 @@ def finish_final_exam(chat_id):
     correct = data["correct"]
     total = len(data["questions"])
     score = int(correct / total * 100)
+    
+    # Сохраняем результат в БД
+    save_test_result(chat_id, "final", score, total)
     
     if score >= 75:
         result = "🎉 <b>ПОЗДРАВЛЯЮ!</b> Вы сдали итоговый экзамен!\n\n📜 Сертификат «Эксперт по подбору масел» выдан!"
@@ -740,7 +754,8 @@ def process_adaptation_answer(chat_id, answer):
     """Обработка ответа на тест адаптации"""
     data = user_test_answers.get(chat_id)
     if not data or data.get("type") != "adaptation":
-        return    
+        return
+    
     q_num = data["current"]
     q = ADAPTATION_TEST[q_num]
     
@@ -837,7 +852,6 @@ def process_webhook_message(chat_id, text):
             
             if text == "🚫 Прервать тест":
                 del user_test_answers[chat_id]
-                # Возвращаемся в меню
                 if test_type == "oil":
                     set_user_cycle(chat_id, user_cycle.get(chat_id, 1))
                 elif test_type == "adaptation":
