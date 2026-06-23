@@ -886,48 +886,48 @@ def process_webhook_message(chat_id, text):
         elif text == '💪 Личность и адаптация':
             handle_adaptation(chat_id)
         elif text == '🔥 Профессиональное выгорание':
-            send_keyboard(chat_id, BURNOUT_TEXT, ["❓ Что делать?", "😫 А если уже всё бесит?", "◀️ В меню адаптации"])
+            send_keyboard(chat_id, BURNOUT_TEXT, ["❓ Что делать?", "😫 А если уже всё бесит?", "◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '❓ Что делать?':
-            send_keyboard(chat_id, BURNOUT_TIPS, ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, BURNOUT_TIPS, ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '😫 А если уже всё бесит?':
-            send_keyboard(chat_id, "😫 Возьми 2 выходных подряд.", ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, "😫 Возьми 2 выходных подряд.", ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '👥 Я и коллектив сейчас':
-            send_keyboard(chat_id, "👥 Я и коллектив сейчас", ["⚠️ Что делать с токсичным коллегой?", "📈 Как повысить авторитет?", "◀️ В меню адаптации"])
+            send_keyboard(chat_id, "👥 <b>Я и коллектив сейчас</b>\n\nТы уже давно в коллективе. Но отношения меняются.\n\nСпроси себя честно:\n• Какая у тебя роль — «вечный соглашатель», «скептик» или «надёжный человек»?\n• С кем из коллег легко работать?\n• Кто сливает твою энергию?\n• Берёшь ли ты лишнее?", ["⚠️ Что делать с токсичным коллегой?", "📈 Как повысить авторитет?", "◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '⚠️ Что делать с токсичным коллегой?':
-            send_keyboard(chat_id, TOXIC_ADVICE, ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, TOXIC_ADVICE, ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '📈 Как повысить авторитет?':
-            send_keyboard(chat_id, AUTHORITY_ADVICE, ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, AUTHORITY_ADVICE, ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '😤 Сложные клиенты':
-            buttons = ["🤬 Хам", "😢 Жертва", "🎭 Манипулятор", "◀️ В меню адаптации"]
-            send_keyboard(chat_id, "😤 Сложные клиенты. Выберите тип:", buttons)
+            buttons = ["🤬 Хам", "😢 Жертва", "🎭 Манипулятор", "◀️ Назад к адаптации", "🏠 В главное меню"]
+            send_keyboard(chat_id, "😤 <b>Сложные клиенты</b>\n\nКлиенты бывают разными. Твоя задача — не перевоспитать, а сохранить ресурс и помочь по факту.\n\nВыберите тип клиента:", buttons)
         elif text == '🤬 Хам':
-            send_keyboard(chat_id, CLIENT_TYPES["ham"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, CLIENT_TYPES["ham"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '😢 Жертва':
-            send_keyboard(chat_id, CLIENT_TYPES["victim"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, CLIENT_TYPES["victim"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '🎭 Манипулятор':
-            send_keyboard(chat_id, CLIENT_TYPES["manipulator"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, CLIENT_TYPES["manipulator"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '📈 Моя личность + карьера':
-            buttons = ["✅ Чек-лист роста", "💪 Как прокачать уверенность?", "◀️ В меню адаптации"]
-            send_keyboard(chat_id, "📈 Моя личность + карьера", buttons)
+            buttons = ["✅ Чек-лист роста", "💪 Как прокачать уверенность?", "◀️ Назад к адаптации", "🏠 В главное меню"]
+            send_keyboard(chat_id, "📈 <b>Моя личность + карьера</b>\n\nТы не просто оператор. Ты человек с амбициями и правом на рост.\n\nКуда двигаться дальше?", buttons)
         elif text == '✅ Чек-лист роста':
-            send_keyboard(chat_id, CHECKLIST, ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, CHECKLIST, ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '💪 Как прокачать уверенность?':
-            send_keyboard(chat_id, CONFIDENCE, ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, CONFIDENCE, ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '⚡ Энергия смены':
-            buttons = ["⏱️ 30 секунд между клиентами", "⚓ Якорь спокойствия", "🎯 Ритуал после смены", "◀️ В меню адаптации"]
-            send_keyboard(chat_id, "⚡ Энергия смены", buttons)
+            buttons = ["⏱️ 30 секунд между клиентами", "⚓ Якорь спокойствия", "🎯 Ритуал после смены", "◀️ Назад к адаптации", "🏠 В главное меню"]
+            send_keyboard(chat_id, "⚡ <b>Энергия смены</b>\n\nУсталость копится не за смену, а за минуты, которые ты не отдыхал.\n\nВот 3 приёма, которые работают без перерыва:", buttons)
         elif text == '⏱️ 30 секунд между клиентами':
-            send_keyboard(chat_id, ENERGY_TIPS["30sec"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, ENERGY_TIPS["30sec"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '⚓ Якорь спокойствия':
-            send_keyboard(chat_id, ENERGY_TIPS["anchor"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, ENERGY_TIPS["anchor"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '🎯 Ритуал после смены':
-            send_keyboard(chat_id, ENERGY_TIPS["ritual"], ["◀️ В меню адаптации"])
+            send_keyboard(chat_id, ENERGY_TIPS["ritual"], ["◀️ Назад к адаптации", "🏠 В главное меню"])
         elif text == '📊 Тест на адаптацию':
             start_adaptation_test(chat_id)
         elif text == '◀️ В меню адаптации':
             handle_adaptation(chat_id)
-        elif text == '◀️ В меню цикла':
-            set_user_cycle(chat_id, user_cycle.get(chat_id, 1))
+        elif text == '◀️ Назад к адаптации':
+            handle_adaptation(chat_id)
         
         # Ветка 3: Обучение маслам
         elif text == '📚 Обучение маслам':
