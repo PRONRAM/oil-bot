@@ -237,7 +237,6 @@ CONTACTS = """
 
 def handle_oil(chat_id):
     """Главное меню обучения маслам"""
-    # Получаем количество пройденных циклов из БД
     completed_count = get_completed_cycles_count(chat_id)
     
     buttons = ["🎯 Выбрать цикл", "🏠 В главное меню"]
@@ -264,7 +263,6 @@ def handle_oil(chat_id):
 def select_cycle(chat_id):
     """Показать меню выбора цикла с отображением прогресса"""
     buttons = []
-    progress = get_user_progress(chat_id)
     completed_cycles = get_completed_cycles(chat_id)
     
     for cycle_num in range(1, 7):
@@ -327,7 +325,7 @@ def set_user_cycle(chat_id, cycle):
         status_text += "\n\n🎓 Тест по циклу доступен!"
         buttons.append("📝 Пройти тест цикла")
     
-    buttons.extend(["🎯 Сменить цикл", "🏠 В главное меню"])
+    buttons.extend(["🎯 Сменить цикл", "◀️ Назад к циклу", "🏠 В главное меню"])
     
     send_keyboard(chat_id, status_text, buttons)
 
@@ -345,11 +343,10 @@ def show_card(chat_id):
     card_text = cards_list[idx]
     total = len(cards_list)
     
-    # Если просмотрена последняя карточка, отмечаем в БД
     if idx == total - 1:
         mark_material_viewed(chat_id, cycle, "cards")
     
-    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "🎯 Сменить цикл", "🏠 В главное меню"]
+    buttons = ["◀️ Предыдущая", "▶️ Следующая", "🎲 Случайная", "◀️ Назад к циклу", "🏠 В главное меню"]
     send_keyboard(chat_id, f"📇 <b>Цикл {cycle} | Карточка {idx + 1} из {total}</b>\n\n{card_text}", buttons)
 
 
@@ -371,7 +368,7 @@ def show_case(chat_id):
     if idx == total - 1:
         mark_material_viewed(chat_id, cycle, "cases")
     
-    buttons = ["◀️ Предыдущий", "▶️ Следующий", "🎲 Случайный", "🎯 Сменить цикл", "🏠 В главное меню"]
+    buttons = ["◀️ Предыдущий", "▶️ Следующий", "🎲 Случайный", "◀️ Назад к циклу", "🏠 В главное меню"]
     send_keyboard(chat_id, f"💰 <b>Как продать? Цикл {cycle}</b>\n\n{case_text}", buttons)
 
 
@@ -391,7 +388,7 @@ def show_story(chat_id):
     if idx == total - 1:
         mark_material_viewed(chat_id, cycle, "stories")
     
-    buttons = ["◀️ Предыдущая история", "▶️ Следующая история", "🎲 Случайная история", "🎯 Сменить цикл", "🏠 В главное меню"]
+    buttons = ["◀️ Предыдущая история", "▶️ Следующая история", "🎲 Случайная история", "◀️ Назад к циклу", "🏠 В главное меню"]
     send_keyboard(chat_id, f"📖 <b>Цикл {cycle} | История {idx + 1} из {total}</b>\n\n{story}", buttons)
 
 
@@ -399,7 +396,6 @@ def start_oil_test(chat_id):
     """Начать тест по циклу (8 вопросов)"""
     cycle = user_cycle.get(chat_id, 1)
     
-    # Проверяем, все ли материалы изучены
     if not check_cycle_completion(chat_id, cycle):
         progress = get_user_progress(chat_id)
         cycle_data = progress.get(cycle, {})
@@ -417,7 +413,7 @@ def start_oil_test(chat_id):
             f"🔒 <b>Тест цикла {cycle} пока недоступен!</b>\n\n"
             f"Сначала изучите все материалы:\n\n{missing_text}\n\n"
             f"После просмотра всех материалов тест откроется автоматически.",
-            ["◀️ В меню цикла"]
+            ["◀️ Назад к циклу", "🏠 В главное меню"]
         )
         return
     
@@ -482,7 +478,6 @@ def finish_oil_test(chat_id):
     total = len(data["questions"])
     score = int(correct / total * 100)
     
-    # Сохраняем результат в БД
     save_test_result(chat_id, "oil", score, total, cycle)
     
     if score >= 80:
@@ -492,7 +487,7 @@ def finish_oil_test(chat_id):
     else:
         result = "📖 Стоит поучиться! Рекомендуем повторить материалы цикла и пройти тест снова."
     
-    buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "🎯 Сменить цикл", "🏠 В главное меню"]
+    buttons = ["📇 Знаешь ли ты", "💰 Как продать", "📖 История на сегодня", "🎯 Сменить цикл", "◀️ Назад к циклу", "🏠 В главное меню"]
     send_keyboard(chat_id, 
         f"✅ <b>Тест цикла {cycle} пройден!</b>\n\n"
         f"Правильных ответов: {correct} из {total}\n"
@@ -565,7 +560,6 @@ def finish_final_exam(chat_id):
     total = len(data["questions"])
     score = int(correct / total * 100)
     
-    # Сохраняем результат в БД
     save_test_result(chat_id, "final", score, total)
     
     if score >= 75:
@@ -942,21 +936,24 @@ def process_webhook_message(chat_id, text):
             select_cycle(chat_id)
         elif text == '🎯 Сменить цикл':
             select_cycle(chat_id)
+        elif text == '◀️ Назад к циклу':
+            cycle = user_cycle.get(chat_id, 1)
+            set_user_cycle(chat_id, cycle)
         elif text == '🎓 Итоговый тест':
             start_final_exam(chat_id)
         
         # Навигация по циклам
-        elif text == '1️⃣ Цикл 1' or text == '✅ Цикл 1 (пройден)':
+        elif text.startswith('1️⃣ Цикл 1') or text == '✅ Цикл 1 (пройден)':
             set_user_cycle(chat_id, 1)
-        elif text == '2️⃣ Цикл 2' or text == '✅ Цикл 2 (пройден)':
+        elif text.startswith('2️⃣ Цикл 2') or text == '✅ Цикл 2 (пройден)':
             set_user_cycle(chat_id, 2)
-        elif text == '3️⃣ Цикл 3' or text == '✅ Цикл 3 (пройден)':
+        elif text.startswith('3️⃣ Цикл 3') or text == '✅ Цикл 3 (пройден)':
             set_user_cycle(chat_id, 3)
-        elif text == '4️⃣ Цикл 4' or text == '✅ Цикл 4 (пройден)':
+        elif text.startswith('4️⃣ Цикл 4') or text == '✅ Цикл 4 (пройден)':
             set_user_cycle(chat_id, 4)
-        elif text == '5️⃣ Цикл 5' or text == '✅ Цикл 5 (пройден)':
+        elif text.startswith('5️⃣ Цикл 5') or text == '✅ Цикл 5 (пройден)':
             set_user_cycle(chat_id, 5)
-        elif text == '6️⃣ Цикл 6' or text == '✅ Цикл 6 (пройден)':
+        elif text.startswith('6️⃣ Цикл 6') or text == '✅ Цикл 6 (пройден)':
             set_user_cycle(chat_id, 6)
         
         # Материалы цикла
